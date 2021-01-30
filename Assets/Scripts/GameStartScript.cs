@@ -18,71 +18,75 @@ public class GameStartScript : MonoBehaviour
     private List<GameObject> cloudObjects = new List<GameObject>{};
     private float _cloudSpawnCounter = 0.1f;
 
-    public GameObject gameUI;
-    public GameObject menuUI;
-    public GameObject pauseUI;
-    public GameObject winUI;
-    public GameObject loseUI;
+    public GameObject gameUI, menuUI, pauseUI, winUI, loseUI;
 
     public string currentState = "menu";
 
-    public float shipSpeed = 1.0f;
-    public float shipBaseY = -0.78f;
-    public float pirateCountdown;
-    public float distanceCountdown;
+    public float shipSpeed = 1.0f, shipBaseY = -0.78f;
+    public float pirateStartTime, pirateCountdown, distanceStart, distanceCountdown;
 
     private float _clearBigMessageTimer = 0.0f;
 
     public int isPaused = 0;
 
     private PlayerMoveScript _playerScript;
-
+    private Vector3 _playerStartPos;
     // collision and repairs
-    public float _repairTimer = 0.0f;
-    public float _repairShipSpeed = 0.5f;
-    public float _repairWait = 4.0f;
+    public float _repairTimer = 0.0f, _repairShipSpeed = 0.5f, _repairWait = 4.0f;
     
     // control spawning waves
-    public float waveTimer = 15.0f;
-    private float timeTillWave = 1.0f;
+    public float waveTimer = 15.0f, timeTillWave = 1.0f;
     public List<GameObject> waveObjects = new List<GameObject>{}; //store all game objects we need to move here
     // Start is called before the first frame update
 
+    public List<GameObject> enemyHorde = new List<GameObject>{};
+
+    public GameObject overlayLeft, overlayRight;
     private Vector3 overlayLeftStart, overlayLeftEnd;
     private Vector3 overlayRightStart, overlayRightEnd;
+    private IEnumerator overlayRightCo, overlayLeftCo, _playerMoveCo;
     void Start()
     {
         isPaused = 1;
         _playerScript = playerObject.GetComponent<PlayerMoveScript>();
         shipSpeed = _playerScript.speed;
-        overlayLeftStart = GameObject.Find("overlay-color-left").transform.position;
-        overlayRightStart = GameObject.Find("overlay-color-right").transform.position;
-        overlayLeftEnd = overlayLeftStart + Vector3.left;
-        overlayRightEnd = overlayRightStart + Vector3.right;
+        _playerStartPos = playerObject.transform.position;
+        playerObject.transform.position = new Vector3(-7f, _playerStartPos.y, _playerStartPos.z);
+        overlayLeftStart = overlayLeft.transform.position;
+        overlayRightStart = overlayRight.transform.position;
+        overlayLeftEnd = new Vector3(overlayLeftStart.x-10, overlayLeftStart.y, overlayLeftStart.z);
+        overlayRightEnd = new Vector3(overlayRightStart.x+10, overlayRightStart.y, overlayLeftStart.z);
     }
 
     public void StartPlaying()
     {
+        pirateStartTime = pirateCountdown; distanceStart = distanceCountdown;
+        Debug.Log("Start play transition");
         currentState = "menuToPlayTransition";
         GameObject.Find("PlayButton").SetActive(false);
+        //overlayRightCo = MoveOverSeconds( overlayRight, overlayRightEnd, 10f, "menuToPlay");
+        _playerMoveCo = MoveOverSeconds( playerObject, _playerStartPos, 4f, "actuallyPlay");
+
+        StartCoroutine(_playerMoveCo);
         
     }
     public void ActuallyStartPlaying()
     {
+        Debug.Log("can actually play");
+        playerObject.transform.position = _playerStartPos;
         currentState = "playing";
-        GameObject.Find("overlay-color-left").SetActive(false);
-        GameObject.Find("overlay-color-right").SetActive(false);
         menuUI.SetActive(false);
         pauseUI.SetActive(false);
         gameUI.SetActive(true);
         isPaused = 0;
+        SpawnHorde();
     }
 
     public void DisplayMenu()
     {
         currentState = "menu";
-        GameObject.Find("overlay-color-left").SetActive(true);
-        GameObject.Find("overlay-color-right").SetActive(true);
+        //GameObject.Find("overlay-color-left").SetActive(true);
+        //GameObject.Find("overlay-color-right").SetActive(true);
         GameObject.Find("PlayButton").SetActive(true);
         menuUI.SetActive(true);
         pauseUI.SetActive(false);
@@ -93,21 +97,56 @@ public class GameStartScript : MonoBehaviour
     public void GameOver()
     {
         isPaused = 1;
-        currentState = "transition";
+        currentState = "GameOver";
         menuUI.SetActive(false);
         pauseUI.SetActive(false);
         gameUI.SetActive(false);
-        GameObject.Find("LoseCanvas").SetActive(true);
+        loseUI.SetActive(true);
         //ShowBigMessage("Pirates Caught you, YARRR", 60.0f);
     }
     public void GameWon()
     {
         isPaused = 1;
-        currentState = "transition";
+        currentState = "GameWon";
         menuUI.SetActive(false);
         pauseUI.SetActive(false);
         gameUI.SetActive(false);
-        GameObject.Find("WinCanvas").SetActive(true);
+        loseUI.SetActive(false);
+        winUI.SetActive(true);
+    }
+
+    //manage fleet of enemy ships behind you , each tick existing ships move closer and scale up
+    //and new tiny ones spawn
+    public void SpawnHorde()
+    {
+        float progress = 100 -(int)((pirateCountdown*100) / pirateStartTime); //scale 1-100 of how close pirates are
+        int totalPirates = (int)(progress / 10) + (progress < 10f ? 1 : 2);
+        //Debug.Log("horde progress "+progress+" - total pirates: "+totalPirates);
+        //add any pirates that need to be created
+        int currentPirates = enemyHorde.Count;
+        GameObject EnemyParent = GameObject.Find("Enemies");
+        for(int i =currentPirates; i<=totalPirates; i++){
+            Debug.Log("spawning new pirate yarrr "+i+" out of "+totalPirates);
+            int whichWave = Random.Range(1,4);
+        Vector3 ePos = new Vector3( 
+            enemyTemplate.transform.position.x + Random.Range(-1f,1f), 
+            (whichWave==1 ? spawnTop.transform.position.y : (whichWave==2? spawnMid.transform.position.y : spawnBottom.transform.position.y)), 
+            enemyTemplate.transform.position.z);
+            GameObject pirate = (GameObject) Instantiate(enemyTemplate, ePos, Quaternion.identity);
+                pirate.transform.SetParent(EnemyParent.transform);
+                pirate.transform.localScale = new Vector3( 1.0f, 1.0f, 1.0f);
+                pirate.SetActive(true);
+                pirate.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
+                pirate.GetComponent<Renderer>().sortingOrder = (whichWave==1 ? 1 : (whichWave==2? 3: 4));
+                pirate.tag = "EnemyHorde";
+                pirate.GetComponent<EnemyHordeScript>().StartMovingIt(
+                    new Vector3( playerObject.transform.position.x, ePos.y, ePos.z),
+                    new Vector3( 3.0f, 3.0f, 1f), 
+                    pirateCountdown
+                );
+                enemyHorde.Add(pirate);
+        }
+
     }
 
     // called when player speed is modified to change all related factors
@@ -203,18 +242,72 @@ public class GameStartScript : MonoBehaviour
         ChangeSpeed(_repairShipSpeed);
         _repairTimer = _repairWait;
     }
+    
+    //CoRoutine to move an object from start to dest over time
+    public IEnumerator MoveOverSeconds (GameObject objectToMove, Vector3 end, float seconds, string eventName)
+    {
+        float elapsedTime = 0;
+        Vector3 startingPos = objectToMove.transform.position;
+        while (elapsedTime < seconds)
+        {
+        objectToMove.transform.position = Vector3.Lerp(startingPos, end, (elapsedTime / seconds));
+        elapsedTime += Time.deltaTime;
+        yield return new WaitForEndOfFrame();
+        }
+        objectToMove.transform.position = end;
+        if(currentState == "menuToPlayTransition") {
+            ActuallyStartPlaying();
+        }
+    } 
+    
+
+    public void MoveClouds()
+    {
+                   //cloud spawn
+            if( _cloudSpawnCounter != 0.0f) {
+                _cloudSpawnCounter -= Time.deltaTime;
+                if( _cloudSpawnCounter <= 0.0f) {
+                    _cloudSpawnCounter = 1.2f;
+                    for(int i = 0; i < cloudSpawners.Length; i++) {
+                        float doCloud = Random.Range(0.0f, 1.0f);
+                        if( 0.9f < doCloud  ) {
+                            int cloudIndex = Random.Range(0, cloudSpawners.Length-1);
+                            GameObject cloud = (GameObject) Instantiate(cloudSpawners[cloudIndex], cloudSpawners[i].transform.position, Quaternion.identity);
+                            
+                            cloud.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("waves");
+                            cloudObjects.Add(cloud);
+                        }
+                    }
+                }
+            }
+
+            List<GameObject> destroyThese = new List<GameObject>{};
+            foreach( GameObject cloudObj in cloudObjects) {
+                    cloudObj.transform.position = new Vector3(cloudObj.transform.position.x -  Time.deltaTime, cloudObj.transform.position.y, cloudObj.transform.position.z);
+                    if(cloudObj.transform.position.x < -10f) {
+                        destroyThese.Add(cloudObj);
+                        
+                    }
+            }
+            foreach( GameObject cloudObj in destroyThese) {
+                cloudObjects.Remove(cloudObj);
+                Destroy(cloudObj);
+            }
+    }
+
     // Update is called once per frame
+
     void Update()
     {
 
         // menu transition
-        if(currentState == "menuToPlayTransition") {
+        /*if(currentState == "menuToPlayTransition") {
             GameObject.Find("overlay-color-left").transform.position = Vector3.Lerp(overlayLeftStart, overlayLeftEnd, 0.1f*Time.deltaTime);
             GameObject.Find("overlay-color-right").transform.position = Vector3.Lerp(overlayRightStart, overlayRightEnd, 0.1f*Time.deltaTime);
             if( GameObject.Find("overlay-color-right").transform.position.x > 1.5f ) {
                 ActuallyStartPlaying();
             }
-        }
+        }*/
 
         // Pause
         // TODO:: use input mapping
@@ -230,8 +323,15 @@ public class GameStartScript : MonoBehaviour
             }
         }
 
-        if( isPaused < 1) {
+        if( currentState == "menu" || currentState == "menuToPlayTransition" 
+            || (currentState == "playing" && isPaused < 1) ) {
+                MoveClouds();
+            }
+
+        if( currentState == "playing" && isPaused < 1) {
             
+            SpawnHorde();
+
             if( playerObject) {
                 pirateCountdown -= Time.deltaTime;
                 distanceCountdown -= Time.deltaTime * shipSpeed ;
@@ -308,35 +408,7 @@ public class GameStartScript : MonoBehaviour
             }
             destroyThese.Clear();
 
-            //cloud spawn
-            if( _cloudSpawnCounter != 0.0f) {
-                _cloudSpawnCounter -= Time.deltaTime;
-                if( _cloudSpawnCounter <= 0.0f) {
-                    _cloudSpawnCounter = 1.2f;
-                    for(int i = 0; i < cloudSpawners.Length; i++) {
-                        float doCloud = Random.Range(0.0f, 1.0f);
-                        if( 0.9f < doCloud  ) {
-                            int cloudIndex = Random.Range(0, cloudSpawners.Length-1);
-                            GameObject cloud = (GameObject) Instantiate(cloudSpawners[cloudIndex], cloudSpawners[i].transform.position, Quaternion.identity);
-                            
-                            cloud.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("waves");
-                            cloudObjects.Add(cloud);
-                        }
-                    }
-                }
-            }
-
-            foreach( GameObject cloudObj in cloudObjects) {
-                    cloudObj.transform.position = new Vector3(cloudObj.transform.position.x -  Time.deltaTime, cloudObj.transform.position.y, cloudObj.transform.position.z);
-                    if(cloudObj.transform.position.x < -10f) {
-                        destroyThese.Add(cloudObj);
-                        
-                    }
-            }
-            foreach( GameObject cloudObj in destroyThese) {
-                cloudObjects.Remove(cloudObj);
-                Destroy(cloudObj);
-            }
+ 
 
             // TODO:: spawn/scale chasing enemy horde based on timer checkpoints
         }
