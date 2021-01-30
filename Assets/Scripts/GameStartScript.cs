@@ -85,7 +85,7 @@ public class GameStartScript : MonoBehaviour
         GameObject.Find("overlay-color-right").SetActive(true);
         GameObject.Find("PlayButton").SetActive(true);
         menuUI.SetActive(true);
-        pauseUI.SetActive(true);
+        pauseUI.SetActive(false);
         gameUI.SetActive(false);
         isPaused = 1;
     }
@@ -93,12 +93,21 @@ public class GameStartScript : MonoBehaviour
     public void GameOver()
     {
         isPaused = 1;
-        ShowBigMessage("Pirates Caught you, YARRR", 60.0f);
+        currentState = "transition";
+        menuUI.SetActive(false);
+        pauseUI.SetActive(false);
+        gameUI.SetActive(false);
+        GameObject.Find("LoseCanvas").SetActive(true);
+        //ShowBigMessage("Pirates Caught you, YARRR", 60.0f);
     }
     public void GameWon()
     {
         isPaused = 1;
-        ShowBigMessage("You escaped with the booty!", 60.0f);
+        currentState = "transition";
+        menuUI.SetActive(false);
+        pauseUI.SetActive(false);
+        gameUI.SetActive(false);
+        GameObject.Find("WinCanvas").SetActive(true);
     }
 
     // called when player speed is modified to change all related factors
