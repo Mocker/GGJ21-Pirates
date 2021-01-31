@@ -263,6 +263,7 @@ public class GameStartScript : MonoBehaviour
             // Decide on type of obstacle. The rocks should be most common
             string tag = "Obstacle";
             GameObject template = obstacleTemplate;
+            Vector3 krakenScale = new Vector3(2.0f, 2.0f, 1.0f);
             int spawnTheKraken = Random.Range(0,100);
             // TODO:: modify spawn weights on each template, sum them up and then pick that way
             // TODO:: quick change on percents before release
@@ -274,6 +275,7 @@ public class GameStartScript : MonoBehaviour
                 // enemy ship
                 template = enemyTemplate;
                 tag = "Enemy";
+                krakenScale = new Vector3(3.0f, 3.0f, 1.0f);
             }
 
             GameObject EnemyParent = GameObject.Find("Obstacles");
@@ -284,7 +286,7 @@ public class GameStartScript : MonoBehaviour
                 Vector3 ePos = new Vector3(spawnTop.transform.position.x + x, spawnTop.transform.position.y, spawnTop.transform.position.z);
                 GameObject EnemyTop = (GameObject) Instantiate(template, ePos, Quaternion.identity);
                 EnemyTop.transform.SetParent(EnemyParent.transform);
-                EnemyTop.transform.localScale = new Vector3( 2.0f, 2.0f, 1.0f);
+                EnemyTop.transform.localScale = krakenScale;
                 EnemyTop.SetActive(true);
                 EnemyTop.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyTop.GetComponent<Renderer>().sortingOrder = 2;
@@ -298,7 +300,7 @@ public class GameStartScript : MonoBehaviour
                 
                 GameObject EnemyMid = (GameObject) Instantiate(template, ePos, Quaternion.identity);
                 EnemyMid.transform.SetParent(EnemyParent.transform);
-                EnemyMid.transform.localScale = new Vector3( 2.0f, 2.0f, 1.0f);
+                EnemyMid.transform.localScale = krakenScale;
                 EnemyMid.SetActive(true);
                 EnemyMid.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyMid.GetComponent<Renderer>().sortingOrder = 3;
@@ -312,7 +314,7 @@ public class GameStartScript : MonoBehaviour
                 
                 GameObject EnemyBottom = (GameObject) Instantiate(template, ePos, Quaternion.identity);
                 EnemyBottom.transform.SetParent(EnemyParent.transform);
-                EnemyBottom.transform.localScale = new Vector3( 2.0f, 2.0f, 1.0f);
+                EnemyBottom.transform.localScale = krakenScale;
                 EnemyBottom.SetActive(true);
                 EnemyBottom.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyBottom.GetComponent<Renderer>().sortingOrder = 4;
@@ -377,7 +379,8 @@ public class GameStartScript : MonoBehaviour
                             int cloudIndex = Random.Range(0, cloudSpawners.Length-1);
                             GameObject cloud = (GameObject) Instantiate(cloudSpawners[cloudIndex], cloudSpawners[i].transform.position, Quaternion.identity);
                             
-                            cloud.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("waves");
+                            cloud.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
+                            cloud.GetComponent<Renderer>().sortingOrder = 1;
                             cloudObjects.Add(cloud);
                         }
                     }
