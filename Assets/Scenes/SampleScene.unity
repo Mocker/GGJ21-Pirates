@@ -245,8 +245,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4,
-    type: 3}
+  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4, type: 3}
   m_Color: {r: 0.6994037, g: 0.7990584, b: 0.8773585, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -608,9 +607,13 @@ MonoBehaviour:
   loseUI: {fileID: 1571986439}
   playButton: {fileID: 1786639351}
   helpButton: {fileID: 768477497}
-  wellerManLength: 82.392006
+  wellerManLength: 10
   wellerManCountdown: 0
   wellerManIntermissionCounter: 0
+  themeSongs:
+  - {fileID: 8300000, guid: 26c4c7d8dd0664b36bdcfcd768abe431, type: 3}
+  - {fileID: 8300000, guid: 8489a23d686b64ee8a599cdd94138d08, type: 3}
+  titleSong: {fileID: 8300000, guid: 8489a23d686b64ee8a599cdd94138d08, type: 3}
   currentState: menu
   shipSpeed: 1
   shipBaseY: -0.78
@@ -726,6 +729,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentLane: 1
+  oName: Rocks
 --- !u!82 &359720336
 AudioSource:
   m_ObjectHideFlags: 0
@@ -856,9 +860,9 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 359720334}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 9978889f01872406496112904747b305, type: 2}
+  m_Controller: {fileID: 9100000, guid: 8b74c65b2cf694bf89ac61b5165ba53e, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1099,7 +1103,7 @@ SpriteRenderer:
   m_SortingLayerID: 1453417783
   m_SortingLayer: 2
   m_SortingOrder: 1
-  m_Sprite: {fileID: 21300000, guid: 8d2847618742045dea4dffd66c0ccf33, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 3620c25148523ad4fbd8ac83ce193145, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1707,11 +1711,11 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.4
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 4.802408
+  orthographic size: 4.7451463
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1928,7 +1932,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'Distance Left: 10km @ 2 knots'
+  m_Text: 'Distance: 10km @ 2 knots'
 --- !u!222 &543128350
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2045,7 +2049,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 611908041}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.56, y: -0.493, z: 18.93801}
+  m_LocalPosition: {x: 2.56, y: -0.48, z: 18.93801}
   m_LocalScale: {x: 1.8282926, y: 1.7264732, z: 1}
   m_Children: []
   m_Father: {fileID: 342490226}
@@ -2475,6 +2479,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentLane: 1
+  oName: Rocks
 --- !u!1 &768477497
 GameObject:
   m_ObjectHideFlags: 0
@@ -3951,8 +3956,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4,
-    type: 3}
+  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4, type: 3}
   m_Color: {r: 0.45882356, g: 0.627451, b: 0.85098046, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -4300,6 +4304,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentLane: 1
+  oName: Rocks
 --- !u!82 &1430846665
 AudioSource:
   m_ObjectHideFlags: 0
@@ -4628,8 +4633,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -2.816679, y: -1.7119151}
-  m_SizeDelta: {x: 1920.0001, y: 1080}
+  m_AnchoredPosition: {x: -2.1894999, y: -1.7272}
+  m_SizeDelta: {x: 1778.951, y: 1076.5598}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1444286048
 MonoBehaviour:
@@ -5219,8 +5224,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4,
-    type: 3}
+  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4, type: 3}
   m_Color: {r: 0.46057317, g: 0.62685186, b: 0.8490566, a: 1}
   m_FlipX: 0
   m_FlipY: 0

@@ -19,7 +19,11 @@ public class GameStartScript : MonoBehaviour
     private float _cloudSpawnCounter = 0.1f;
 
     public GameObject Wellerman, gameUI, menuUI, pauseUI, winUI, loseUI, playButton, helpButton;
-    public float wellerManLength = 60f * 1.37320f , wellerManCountdown, wellerManIntermissionCounter;
+    public float wellerManLength = 10f;// 60f * 1.37320f;
+    public float wellerManCountdown, wellerManIntermissionCounter;
+    public AudioClip[] themeSongs;
+    public AudioClip titleSong;
+    private int _currentThemeIndex;
 
     public string currentState = "menu";
 
@@ -94,7 +98,11 @@ public class GameStartScript : MonoBehaviour
         // moves the player to mid screen before we start
         _playerMoveCo = MoveOverSeconds( playerObject, _playerStartPos, 3.8f, "actuallyPlay");
         StartCoroutine(_playerMoveCo);
+        _currentThemeIndex = 0;
+        Wellerman.GetComponent<AudioSource>().Stop();
+        Wellerman.GetComponent<AudioSource>().clip = themeSongs[_currentThemeIndex];
         Wellerman.GetComponent<AudioSource>().Play();
+        wellerManLength = Wellerman.GetComponent<AudioSource>().clip.length;
         wellerManCountdown = wellerManLength; //stages are seperated by length of the song
         currentBaseSpeed = distanceStage * speedBasePerStage;
         _playerScript.minSpeed = distanceStage * speedBasePerStage - 1f;
@@ -122,6 +130,12 @@ public class GameStartScript : MonoBehaviour
             scoreText = "Top Score: "+topScore;
         }
         
+        Wellerman.GetComponent<AudioSource>().Stop();
+        if(titleSong){
+            Wellerman.GetComponent<AudioSource>().clip = titleSong;
+            Wellerman.GetComponent<AudioSource>().Play();
+        } else { Debug.Log("Missing title song");}
+
         playButton.SetActive(true);
         menuUI.SetActive(true);
         menuUI.transform.Find("TopScoreText").GetComponent<UnityEngine.UI.Text>().text = scoreText;
@@ -136,7 +150,7 @@ public class GameStartScript : MonoBehaviour
     {   
         Debug.Log("Game Over");
         // TODO:: figure better calculation for score, like pirates sunk, weight of the gold etc
-        int totalScore = (int)distanceCounter + (_playerScript.gold*50);
+        int totalScore = (int)distanceCounter + (_playerScript.gold*50) + (_playerScript.obstaclesSunk*25);
         
         if( PlayerPrefs.HasKey("TopScore") ){
             int topScore = PlayerPrefs.GetInt("TopScore");
@@ -158,6 +172,7 @@ public class GameStartScript : MonoBehaviour
     }
     public void GameWon()
     {
+        // DONT USE THIS -- you can never win :)
         Debug.Log("You Won!");
         ChangeSpeed(1.0f);
         isPaused = 1;
@@ -265,17 +280,26 @@ public class GameStartScript : MonoBehaviour
             GameObject template = obstacleTemplate;
             Vector3 krakenScale = new Vector3(2.0f, 2.0f, 1.0f);
             int spawnTheKraken = Random.Range(0,100);
+            string templateName = "rocks";
             // TODO:: modify spawn weights on each template, sum them up and then pick that way
             // TODO:: quick change on percents before release
-            if(spawnTheKraken > 90) {
-                // repair powerup
+            if (spawnTheKraken > 98) {
+                //repair powerup
                 template = pickupTemplate;
                 tag = "Pickup";
+                templateName = "repair";
+            }
+            else if(spawnTheKraken > 90) {
+                // gold chest
+                template = pickupTemplate;
+                tag = "Pickup";
+                templateName = "gold";
             } else if(spawnTheKraken > 70) {
                 // enemy ship
                 template = enemyTemplate;
                 tag = "Enemy";
                 krakenScale = new Vector3(3.0f, 3.0f, 1.0f);
+                templateName = "enemy";
             }
 
             GameObject EnemyParent = GameObject.Find("Obstacles");
@@ -291,6 +315,7 @@ public class GameStartScript : MonoBehaviour
                 EnemyTop.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyTop.GetComponent<Renderer>().sortingOrder = 2;
                 EnemyTop.GetComponent<MoveObstacleScript>().currentLane = 1;
+                EnemyTop.GetComponent<MoveObstacleScript>().setObstacleName(templateName);
                 EnemyTop.tag = tag;
                 waveObjects.Add(EnemyTop);
             }
@@ -305,6 +330,7 @@ public class GameStartScript : MonoBehaviour
                 EnemyMid.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyMid.GetComponent<Renderer>().sortingOrder = 3;
                 EnemyMid.GetComponent<MoveObstacleScript>().currentLane = 2;
+                EnemyMid.GetComponent<MoveObstacleScript>().setObstacleName(templateName);
                 EnemyMid.tag = tag;
                 waveObjects.Add(EnemyMid);
             }
@@ -319,6 +345,7 @@ public class GameStartScript : MonoBehaviour
                 EnemyBottom.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyBottom.GetComponent<Renderer>().sortingOrder = 4;
                 EnemyBottom.GetComponent<MoveObstacleScript>().currentLane = 3;
+                EnemyBottom.GetComponent<MoveObstacleScript>().setObstacleName(templateName);
                 EnemyBottom.tag = tag;
                 waveObjects.Add(EnemyBottom);
             }
@@ -329,7 +356,11 @@ public class GameStartScript : MonoBehaviour
 
         
         if(whammo.tag == "Pickup") {
+            // repairs can count as gold for sfx/score purpose
             _playerScript.PickupGold(1);
+            if(whammo.GetComponent<MoveObstacleScript>().oName == "repair"){
+                LifeUp();
+            }
         }
         else if(whammo.tag == "Enemy" || whammo.tag == "Obstacle" || whammo.tag == "bullet"){
             if(_camShake){
@@ -420,19 +451,32 @@ public class GameStartScript : MonoBehaviour
     }
 
     public void NextStage() {
+        //clear wave - slight pause for victory sound - then start next wave
+        Wellerman.GetComponent<AudioSource>().Stop();
+        wellerManCountdown = 500f;
         timeTillWave = waveTimer + 2f;
         ClearWave();
         distanceStage++;
-        ShowBigMessage("Stage "+distanceStage+" Cleared!", 3.0f);
+        ShowBigMessage("Stage "+distanceStage+" Cleared!", 5.0f);
         Debug.Log("Next stage.. big message should be showing??");
         // TODO:: intermission? bonus stages?
+        wellerManCountdown = wellerManLength;
+        ChangeSpeed(0.9f); //1 or greater automatically gets set to base
+        LifeUp();
+        _playerScript.PlayVictory();
+        Invoke("ActuallyNextStage", 3f);
+    }
+    public void ActuallyNextStage() {
+        _currentThemeIndex += 1; 
+        if(_currentThemeIndex >= themeSongs.Length) _currentThemeIndex = 0;
+        Wellerman.GetComponent<AudioSource>().Stop();
+        Wellerman.GetComponent<AudioSource>().clip = themeSongs[_currentThemeIndex];
+        wellerManLength = Wellerman.GetComponent<AudioSource>().clip.length;
         wellerManCountdown = wellerManLength;
         Wellerman.GetComponent<AudioSource>().Play();
         _playerScript.minSpeed = distanceStage * speedBasePerStage - 1f;
         _playerScript.minSpeed = distanceStage * speedBasePerStage + 1f;
         ChangeSpeed(distanceStage * speedBasePerStage);
-        LifeUp();
-        _playerScript.PlayVictory();
     }
 
     //remove all current wave obstacles
@@ -494,7 +538,7 @@ public class GameStartScript : MonoBehaviour
                     int miniStage = (int) stageSpeedBoostNum - (int) (wellerManCountdown / wQuarter );
                     currentBaseSpeed += miniStage * stageSpeedBoostSpeed;
                     Debug.Log("Speed going to "+currentBaseSpeed);
-                    if(shipSpeed != _repairShipSpeed){
+                    if(shipSpeed >= 1f){
                         ChangeSpeed(currentBaseSpeed);
                     }
                 }
