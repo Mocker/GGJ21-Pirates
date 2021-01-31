@@ -18,7 +18,7 @@ public class GameStartScript : MonoBehaviour
     private List<GameObject> cloudObjects = new List<GameObject>{};
     private float _cloudSpawnCounter = 0.1f;
 
-    public GameObject Wellerman, gameUI, menuUI, pauseUI, winUI, loseUI, playButton;
+    public GameObject Wellerman, gameUI, menuUI, pauseUI, winUI, loseUI, playButton, helpButton;
     public float wellerManLength = 60f * 1.37320f , wellerManCountdown, wellerManIntermissionCounter;
 
     public string currentState = "menu";
@@ -59,10 +59,14 @@ public class GameStartScript : MonoBehaviour
     private Vector3 overlayLeftStart, overlayLeftEnd;
     private Vector3 overlayRightStart, overlayRightEnd;
     private IEnumerator overlayRightCo, overlayLeftCo, _playerMoveCo;
+
+    private CameraShakeScript _camShake;
+    public float camShakeAmt = 0.1f;
     void Start()
     {
         isPaused = 1;
         _playerScript = playerObject.GetComponent<PlayerMoveScript>();
+        _camShake = this.gameObject.GetComponent<CameraShakeScript>();
         shipSpeed = _playerScript.speed;
         _playerStartPos = playerObject.transform.position;
         playerObject.transform.position = new Vector3(-7f, _playerStartPos.y, _playerStartPos.z);
@@ -80,6 +84,7 @@ public class GameStartScript : MonoBehaviour
         Debug.Log("Start play transition");
         currentState = "menuToPlayTransition";
         playButton.SetActive(false);
+        helpButton.SetActive(false);
         lifesUntilPirates = baseLifesUntilPirates;
         distanceCounter = 0f;
         // TODO:: let the player continue from the last stage they were one changing setting stats to match it
@@ -169,7 +174,7 @@ public class GameStartScript : MonoBehaviour
     public void SpawnHorde()
     {
         float progress = (int)((baseLifesUntilPirates - lifesUntilPirates) / baseLifesUntilPirates)*100; //scale 1-100 of how close pirates are
-        int totalPirates = (int)(8*(progress/100)) + (progress < 10f ? 1 : 2);
+        int totalPirates = (int)((baseLifesUntilPirates - lifesUntilPirates))*3 + (progress < 10f ? 1 : 2);
         
         //Move existing pirates one step closer to the player
         foreach(GameObject pirate in enemyHorde) {
@@ -192,10 +197,10 @@ public class GameStartScript : MonoBehaviour
                 pirate.transform.localScale = new Vector3( 1.0f, 1.0f, 1.0f);
                 pirate.SetActive(true);
                 pirate.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
-                pirate.GetComponent<Renderer>().sortingOrder = (whichWave==1 ? 1 : (whichWave==2? 3: 4));
+                pirate.GetComponent<Renderer>().sortingOrder = (whichWave==1 ? 2 : (whichWave==2? 3: 4));
                 pirate.tag = "EnemyHorde";
                 pirate.GetComponent<EnemyHordeScript>().StartMovingIt(
-                    new Vector3( playerObject.transform.position.x, ePos.y-0.2f, ePos.z),
+                    new Vector3( playerObject.transform.position.x-1f, ePos.y-0.2f, ePos.z),
                     new Vector3( 4f, 4f, 4f), 
                     baseLifesUntilPirates
                 );
@@ -265,7 +270,7 @@ public class GameStartScript : MonoBehaviour
                 // repair powerup
                 template = pickupTemplate;
                 tag = "Pickup";
-            } else if(spawnTheKraken > 10) { //all pirates!
+            } else if(spawnTheKraken > 70) {
                 // enemy ship
                 template = enemyTemplate;
                 tag = "Enemy";
@@ -325,6 +330,9 @@ public class GameStartScript : MonoBehaviour
             _playerScript.PickupGold(1);
         }
         else if(whammo.tag == "Enemy" || whammo.tag == "Obstacle" || whammo.tag == "bullet"){
+            if(_camShake){
+                _camShake.Shake(camShakeAmt, 0.3f);
+            }
             _playerScript.TakeDamage(50);
             ChangeSpeed(_repairShipSpeed);
             _repairTimer = _repairWait;

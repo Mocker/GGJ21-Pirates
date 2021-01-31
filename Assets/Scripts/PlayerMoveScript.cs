@@ -59,8 +59,9 @@ public class PlayerMoveScript : MonoBehaviour
         ball.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
         ball.GetComponent<Renderer>().sortingOrder = 5;
         ball.GetComponent<CannonGoBoomScript>().isActive = true;
+        ball.GetComponent<CannonGoBoomScript>().PlayerScript = this;
         ball.GetComponent<CannonGoBoomScript>().SetStats(
-            true, 0.8f, 2f, 3f, 5f
+            true, 0.8f, 1f, 3f, 4.5f
         );
         ball.GetComponent<CannonGoBoomScript>().CurrentLane = _currentWave;
     }

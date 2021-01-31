@@ -65,7 +65,7 @@ public class CannonGoBoomScript : MonoBehaviour
                         }
                         //only care about x position since we are tracking them by lane
                         if(lerpedX.x > enemies[i].transform.position.x-1f && lerpedX.x < enemies[i].transform.position.x+1f){
-                            //Hit!
+                            Debug.Log("Enemy was Hit!"); //Hit!
                             PlayerScript.DestroyedEnemy(enemies[i]);
                             Destroy(this.gameObject);
                             break;

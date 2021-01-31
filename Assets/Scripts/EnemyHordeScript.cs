@@ -39,8 +39,8 @@ public class EnemyHordeScript : MonoBehaviour
     void Update()
     {
         if(moveIt) {
-            float fireTheCannons = Random.Range(0.0f, 1.0f);
-            if(fireTheCannons < 0.02f && _anim.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.EnemyShipIdle")){
+            float fireTheCannons = Random.value;
+            if(fireTheCannons < 0.015f && _anim.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.EnemyShipIdle")){
                 _anim.Play("Base Layer.EnemyShipFiring");
                 GameObject ball = Instantiate(GameObject.Find("Cannonball"), transform.position, Quaternion.identity);
                 ball.SetActive(true);
