@@ -26,13 +26,19 @@ public class EnemyHordeScript : MonoBehaviour
         moveIt = true;
     }
 
+
+    public void MoveAStep( int progress ) {
+        if(moveIt) {
+            elapsedTime += Time.deltaTime;
+            transform.position = Vector3.Lerp(startX, endX, (progress/ destTime));
+            transform.localScale = Vector3.Lerp(startScale, endScale, (progress / destTime));
+        }   
+    }
+
     // Update is called once per frame
     void Update()
     {
         if(moveIt) {
-            elapsedTime += Time.deltaTime;
-            transform.position = Vector3.Lerp(startX, endX, (elapsedTime / destTime));
-            transform.localScale = Vector3.Lerp(startScale, endScale, (elapsedTime / destTime));
             float fireTheCannons = Random.Range(0.0f, 1.0f);
             if(fireTheCannons < 0.02f && _anim.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.EnemyShipIdle")){
                 _anim.Play("Base Layer.EnemyShipFiring");
@@ -42,6 +48,6 @@ public class EnemyHordeScript : MonoBehaviour
                 ball.GetComponent<Renderer>().sortingOrder = 5;
                 ball.GetComponent<CannonGoBoomScript>().isActive = true;
             }
-        }   
+        }
     }
 }

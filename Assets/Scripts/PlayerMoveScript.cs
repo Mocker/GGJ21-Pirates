@@ -14,18 +14,25 @@ public class PlayerMoveScript : MonoBehaviour
     };
 
     public int health = 100; //would like to just flag as damaged or not but can use an internal int for now
+    public int gold = 0; // can have random spawned gold pickups as score multipliers
+    public AudioClip sfxGold;
+    public AudioClip sfxDamage;
+    public AudioClip sfxVictory;
 
     internal Transform thisTransform;
     public float speed = 2.0f;
-    public float acceleration = 0.1f;
+    public float acceleration = 0.5f;
     public float minSpeed = 1.0f;
     public float maxSpeed = 3.0f;
+
+    public float cannonCooldown = 1.5f, cannonTimer = 0.0f;
     private Renderer _myRenderer;
     private BobbingAnimationScript _bobbingScript;
     private Animator _animator;
 
     public GameObject _gameObj;
     private GameStartScript _gameController;
+    private AudioSource _audioSource;
     void Start()
     {
         thisTransform = this.transform;
@@ -33,16 +40,29 @@ public class PlayerMoveScript : MonoBehaviour
         _bobbingScript = GetComponent<BobbingAnimationScript>();    
         _animator = GetComponent<Animator>();
         _gameController = _gameObj.GetComponent<GameStartScript>();
+        _audioSource = GetComponent<AudioSource>();
+        gold = 0;
     }
 
     public void Fire()
     {
+        if(cannonTimer > 0.0f) return;
+        cannonTimer = cannonCooldown;
         if( health > 50 )
         {
 			_animator.Play("Base Layer.PlayerDefaultFiring");
         } else {
             _animator.Play("Base Layer.PlayerDamagedFiring");
         }
+        GameObject ball = Instantiate(GameObject.Find("Cannonball"), transform.position, Quaternion.identity);
+        ball.SetActive(true);
+        ball.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
+        ball.GetComponent<Renderer>().sortingOrder = 5;
+        ball.GetComponent<CannonGoBoomScript>().isActive = true;
+        ball.GetComponent<CannonGoBoomScript>().SetStats(
+            true, 0.8f, 2f, 3f, 5f
+        );
+        ball.GetComponent<CannonGoBoomScript>().CurrentLane = _currentWave;
     }
 
     public void IncrementSpeed( float inc) 
@@ -51,6 +71,47 @@ public class PlayerMoveScript : MonoBehaviour
         if(newSpeed < maxSpeed && newSpeed > minSpeed) {
             speed = newSpeed;
             _gameController.ChangeSpeed(speed);
+        }
+    }
+
+    public void PickupGold( int goldAmount)
+    {
+        gold += goldAmount;
+        if(sfxGold){
+            _audioSource.clip = sfxGold;
+            _audioSource.Play();
+        }
+    }
+
+    public bool CannonInLane(int lane, GameObject ball){
+        if(lane != _currentWave) return false;
+        _gameController.PlayerCollided(ball);
+        return true;
+    }
+
+    public void DestroyedEnemy( GameObject enemy) {
+        Debug.Log("Destroyed enemy ship!");
+        _gameController.waveObjects.Remove(enemy);
+        Destroy(enemy);
+    }
+
+    public void TakeDamage(int dmgAmount)
+    {
+        // TODO:: do we care about dmg/health?
+        // health -= dmgAmount
+        // if(health < 1) do bad thing
+        if(sfxDamage){
+            _audioSource.clip = sfxDamage;
+            _audioSource.Play();
+        }
+    }
+
+    public void PlayVictory()
+    {
+        // TODO:: can add an animation or fire off a billion cannons or fireworks or something
+        if(sfxVictory){
+            _audioSource.clip = sfxVictory;
+            _audioSource.Play(); 
         }
     }
 
@@ -63,7 +124,8 @@ public class PlayerMoveScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if(cannonTimer > 0.0f) cannonTimer -= Time.deltaTime;
+
 		if (Input.GetKeyDown(KeyCode.UpArrow)){
             if(_currentWave > 1) {
                 _currentWave--;

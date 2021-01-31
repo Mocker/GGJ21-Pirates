@@ -10,7 +10,7 @@ public class GameStartScript : MonoBehaviour
     public GameObject spawnBottom;
 
     public GameObject obstacleTemplate;
-    public GameObject enemyTemplate;
+    public GameObject enemyTemplate, enemyHordeTemplate, pickupTemplate;
 
     public GameObject[] waves;
 
@@ -19,11 +19,25 @@ public class GameStartScript : MonoBehaviour
     private float _cloudSpawnCounter = 0.1f;
 
     public GameObject Wellerman, gameUI, menuUI, pauseUI, winUI, loseUI, playButton;
+    public float wellerManLength = 60f * 1.37320f , wellerManCountdown, wellerManIntermissionCounter;
 
     public string currentState = "menu";
 
     public float shipSpeed = 1.0f, shipBaseY = -0.78f;
-    public float pirateStartTime, pirateCountdown, distanceStart, distanceCountdown;
+    public float pirateStartTime, pirateCountdown, distanceStart, distanceCountdown, distanceCounter = 0f;
+    
+    // current stage
+    public int distanceStage = 1;
+    // how many mini speed boosts per stage and how fast to boost
+    public float stageSpeedBoostNum = 4.0f, stageSpeedBoostSpeed = 0.25f;
+    public float currentBaseSpeed;
+    // base speed for stage x , step 0
+    public float speedBasePerStage = 2.0f;
+
+    // how many obstacles 
+    public int numObstaclesBase = 12;
+    public int numObstaclesPerWave = 2;
+    public int baseLifesUntilPirates = 4, lifesUntilPirates = 4;
 
     private float _clearBigMessageTimer = 0.0f;
 
@@ -56,6 +70,7 @@ public class GameStartScript : MonoBehaviour
         overlayRightStart = overlayRight.transform.position;
         overlayLeftEnd = new Vector3(overlayLeftStart.x-10, overlayLeftStart.y, overlayLeftStart.z);
         overlayRightEnd = new Vector3(overlayRightStart.x+10, overlayRightStart.y, overlayLeftStart.z);
+        DisplayMenu();
     }
 
     public void StartPlaying()
@@ -65,11 +80,20 @@ public class GameStartScript : MonoBehaviour
         Debug.Log("Start play transition");
         currentState = "menuToPlayTransition";
         playButton.SetActive(false);
-        //overlayRightCo = MoveOverSeconds( overlayRight, overlayRightEnd, 10f, "menuToPlay");
-        _playerMoveCo = MoveOverSeconds( playerObject, _playerStartPos, 4f, "actuallyPlay");
-
+        lifesUntilPirates = baseLifesUntilPirates;
+        distanceCounter = 0f;
+        // TODO:: let the player continue from the last stage they were one changing setting stats to match it
+        distanceStage = 1;
+        
+        
+        // moves the player to mid screen before we start
+        _playerMoveCo = MoveOverSeconds( playerObject, _playerStartPos, 3.8f, "actuallyPlay");
         StartCoroutine(_playerMoveCo);
         Wellerman.GetComponent<AudioSource>().Play();
+        wellerManCountdown = wellerManLength; //stages are seperated by length of the song
+        currentBaseSpeed = distanceStage * speedBasePerStage;
+        _playerScript.minSpeed = distanceStage * speedBasePerStage - 1f;
+        _playerScript.minSpeed = distanceStage * speedBasePerStage + 1f;
         
     }
     public void ActuallyStartPlaying()
@@ -87,10 +111,15 @@ public class GameStartScript : MonoBehaviour
     public void DisplayMenu()
     {
         currentState = "menu";
-        //GameObject.Find("overlay-color-left").SetActive(true);
-        //GameObject.Find("overlay-color-right").SetActive(true);
+        string scoreText = "";
+        if( PlayerPrefs.HasKey("TopScore") ){
+            int topScore = PlayerPrefs.GetInt("TopScore");
+            scoreText = "Top Score: "+topScore;
+        }
+        
         playButton.SetActive(true);
         menuUI.SetActive(true);
+        menuUI.transform.Find("TopScoreText").GetComponent<UnityEngine.UI.Text>().text = scoreText;
         pauseUI.SetActive(false);
         gameUI.SetActive(false);
         winUI.SetActive(false);
@@ -99,7 +128,19 @@ public class GameStartScript : MonoBehaviour
     }
 
     public void GameOver()
-    {   Debug.Log("You Lose");
+    {   
+        Debug.Log("Game Over");
+        // TODO:: figure better calculation for score, like pirates sunk, weight of the gold etc
+        int totalScore = (int)distanceCounter + (_playerScript.gold*50);
+        
+        if( PlayerPrefs.HasKey("TopScore") ){
+            int topScore = PlayerPrefs.GetInt("TopScore");
+            if(totalScore > topScore) {
+                PlayerPrefs.SetInt("TopScore", totalScore);
+            }
+        } else {
+            PlayerPrefs.SetInt("TopScore", totalScore);
+        }
         ChangeSpeed(1.0f);
         isPaused = 1;
         currentState = "GameOver";
@@ -107,6 +148,7 @@ public class GameStartScript : MonoBehaviour
         pauseUI.SetActive(false);
         gameUI.SetActive(false);
         loseUI.SetActive(true);
+        loseUI.transform.Find("ScoreText").GetComponent<UnityEngine.UI.Text>().text = "Score: "+totalScore;
         //ShowBigMessage("Pirates Caught you, YARRR", 60.0f);
     }
     public void GameWon()
@@ -126,9 +168,14 @@ public class GameStartScript : MonoBehaviour
     //and new tiny ones spawn
     public void SpawnHorde()
     {
-        float progress = 100 -(int)((pirateCountdown*100) / pirateStartTime); //scale 1-100 of how close pirates are
-        int totalPirates = (int)(progress / 8) + (progress < 10f ? 1 : 2);
-        //Debug.Log("horde progress "+progress+" - total pirates: "+totalPirates);
+        float progress = (int)((baseLifesUntilPirates - lifesUntilPirates) / baseLifesUntilPirates)*100; //scale 1-100 of how close pirates are
+        int totalPirates = (int)(8*(progress/100)) + (progress < 10f ? 1 : 2);
+        
+        //Move existing pirates one step closer to the player
+        foreach(GameObject pirate in enemyHorde) {
+            pirate.GetComponent<EnemyHordeScript>().MoveAStep( baseLifesUntilPirates - lifesUntilPirates);
+        }
+
         //add any pirates that need to be created
         int currentPirates = enemyHorde.Count;
         GameObject EnemyParent = GameObject.Find("Enemies");
@@ -136,11 +183,11 @@ public class GameStartScript : MonoBehaviour
             Debug.Log("spawning new pirate yarrr "+i+" out of "+totalPirates);
             int whichWave = Random.Range(1,4);
         Vector3 ePos = new Vector3( 
-            enemyTemplate.transform.position.x + Random.Range(-1f,1f), 
+            enemyHordeTemplate.transform.position.x + Random.Range(-1f,1f), 
             (whichWave==1 ? spawnTop.transform.position.y : (whichWave==2? spawnMid.transform.position.y : spawnBottom.transform.position.y)), 
-            enemyTemplate.transform.position.z);
+            enemyHordeTemplate.transform.position.z);
             ePos.y += 0.2f;
-            GameObject pirate = (GameObject) Instantiate(enemyTemplate, ePos, Quaternion.identity);
+            GameObject pirate = (GameObject) Instantiate(enemyHordeTemplate, ePos, Quaternion.identity);
                 pirate.transform.SetParent(EnemyParent.transform);
                 pirate.transform.localScale = new Vector3( 1.0f, 1.0f, 1.0f);
                 pirate.SetActive(true);
@@ -150,11 +197,21 @@ public class GameStartScript : MonoBehaviour
                 pirate.GetComponent<EnemyHordeScript>().StartMovingIt(
                     new Vector3( playerObject.transform.position.x, ePos.y-0.2f, ePos.z),
                     new Vector3( 4f, 4f, 4f), 
-                    pirateCountdown
+                    baseLifesUntilPirates
                 );
                 enemyHorde.Add(pirate);
         }
+    }
 
+    // a new life moves the pirate horde back a step as well
+    public void LifeUp()
+    {
+        if( lifesUntilPirates >= baseLifesUntilPirates) return; //don't go above this
+        lifesUntilPirates++;
+        //Move existing pirates one step further to the player
+        foreach(GameObject pirate in enemyHorde) {
+            pirate.GetComponent<EnemyHordeScript>().MoveAStep( baseLifesUntilPirates - lifesUntilPirates);
+        }
     }
 
     // called when player speed is modified to change all related factors
@@ -165,7 +222,6 @@ public class GameStartScript : MonoBehaviour
         _playerScript.speed = newSpeed;
         for(int i = 0; i < waves.Length; i++) {
             waves[i].GetComponent<AnimateTextureScript>().ChangeSpeed(shipSpeed);
-            //waves[i].GetComponent<AnimateTextureScript>()._playerSpeed = (_playerScript.speed/2/0f);
         }
         
     }
@@ -188,16 +244,32 @@ public class GameStartScript : MonoBehaviour
     {
         //start with an x offset and iterate to cover a screen width of spawned obstacles
         //change hard coded screen width and enemy intervals, need enough room for ship to dodge between waves
-        for(float x = 0.0f; x < waveTimer /*TODO: CHANGE TO REAL WIDTH*/; x+= 4.0f)
+        for(float x = 0.0f; x < waveTimer /*TODO: CHANGE TO REAL WIDTH*/; x+= 6.0f)
         {
             // TODO:: can change weights based on difficulty to spawn more often if we want
-            int shouldSpawnTop = Random.Range(0,3);
-            int shouldSpawnBottom = Random.Range(0,11);
-            int shouldSpawnMid = (shouldSpawnTop > 0 && shouldSpawnBottom > 0) ? 0 : Random.Range(0,11);
+            // currently we just increase speed every stage
+            int shouldSpawnTop = Random.Range(0,5);
+            int shouldSpawnBottom = Random.Range(0,5);
+            int shouldSpawnMid = (shouldSpawnTop > 0 && shouldSpawnBottom > 0) ? 0 : Random.Range(0,5);
             if(shouldSpawnTop < 1 && shouldSpawnBottom < 1 ) {
-                shouldSpawnMid = 0;
+                shouldSpawnMid = 1;
             }
 
+            // Decide on type of obstacle. The rocks should be most common
+            string tag = "Obstacle";
+            GameObject template = obstacleTemplate;
+            int spawnTheKraken = Random.Range(0,100);
+            // TODO:: modify spawn weights on each template, sum them up and then pick that way
+            // TODO:: quick change on percents before release
+            if(spawnTheKraken > 90) {
+                // repair powerup
+                template = pickupTemplate;
+                tag = "Pickup";
+            } else if(spawnTheKraken > 10) { //all pirates!
+                // enemy ship
+                template = enemyTemplate;
+                tag = "Enemy";
+            }
 
             GameObject EnemyParent = GameObject.Find("Obstacles");
             // TODO:: support spawning enemy ships
@@ -205,51 +277,65 @@ public class GameStartScript : MonoBehaviour
             if(shouldSpawnTop < 1)
             {
                 Vector3 ePos = new Vector3(spawnTop.transform.position.x + x, spawnTop.transform.position.y, spawnTop.transform.position.z);
-                GameObject EnemyTop = (GameObject) Instantiate(obstacleTemplate, ePos, Quaternion.identity);
+                GameObject EnemyTop = (GameObject) Instantiate(template, ePos, Quaternion.identity);
                 EnemyTop.transform.SetParent(EnemyParent.transform);
                 EnemyTop.transform.localScale = new Vector3( 2.0f, 2.0f, 1.0f);
                 EnemyTop.SetActive(true);
                 EnemyTop.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyTop.GetComponent<Renderer>().sortingOrder = 2;
                 EnemyTop.GetComponent<MoveObstacleScript>().currentLane = 1;
-                EnemyTop.tag = "Obstacle";
+                EnemyTop.tag = tag;
                 waveObjects.Add(EnemyTop);
             }
             if(shouldSpawnMid < 1)
             {
                 Vector3 ePos = new Vector3(spawnTop.transform.position.x + x, spawnMid.transform.position.y, spawnTop.transform.position.z);
                 
-                GameObject EnemyMid = (GameObject) Instantiate(obstacleTemplate, ePos, Quaternion.identity);
+                GameObject EnemyMid = (GameObject) Instantiate(template, ePos, Quaternion.identity);
                 EnemyMid.transform.SetParent(EnemyParent.transform);
                 EnemyMid.transform.localScale = new Vector3( 2.0f, 2.0f, 1.0f);
                 EnemyMid.SetActive(true);
                 EnemyMid.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyMid.GetComponent<Renderer>().sortingOrder = 3;
                 EnemyMid.GetComponent<MoveObstacleScript>().currentLane = 2;
-                EnemyMid.tag = "Obstacle";
+                EnemyMid.tag = tag;
                 waveObjects.Add(EnemyMid);
             }
             if(shouldSpawnBottom < 1)
             {
                 Vector3 ePos = new Vector3(spawnTop.transform.position.x + x, spawnBottom.transform.position.y, spawnTop.transform.position.z);
                 
-                GameObject EnemyBottom = (GameObject) Instantiate(obstacleTemplate, ePos, Quaternion.identity);
+                GameObject EnemyBottom = (GameObject) Instantiate(template, ePos, Quaternion.identity);
                 EnemyBottom.transform.SetParent(EnemyParent.transform);
                 EnemyBottom.transform.localScale = new Vector3( 2.0f, 2.0f, 1.0f);
                 EnemyBottom.SetActive(true);
                 EnemyBottom.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
                 EnemyBottom.GetComponent<Renderer>().sortingOrder = 4;
                 EnemyBottom.GetComponent<MoveObstacleScript>().currentLane = 3;
-                EnemyBottom.tag = "Obstacle";
+                EnemyBottom.tag = tag;
                 waveObjects.Add(EnemyBottom);
             }
         }
     }
 
     public void PlayerCollided(GameObject whammo) {
-        ChangeSpeed(_repairShipSpeed);
-        _repairTimer = _repairWait;
-        Wellerman.GetComponent<AudioSource>().pitch = 0.92f;
+
+        
+        if(whammo.tag == "Pickup") {
+            _playerScript.PickupGold(1);
+        }
+        else if(whammo.tag == "Enemy" || whammo.tag == "Obstacle" || whammo.tag == "bullet"){
+            _playerScript.TakeDamage(50);
+            ChangeSpeed(_repairShipSpeed);
+            _repairTimer = _repairWait;
+            Wellerman.GetComponent<AudioSource>().pitch = 0.98f;
+            lifesUntilPirates -= 1;
+            if(lifesUntilPirates < 1){
+                GameOver();
+            } else {
+                SpawnHorde();
+            }
+        }
     }
     
     //CoRoutine to move an object from start to dest over time
@@ -322,6 +408,36 @@ public class GameStartScript : MonoBehaviour
         DisplayMenu();
     }
 
+    public void NextStage() {
+        timeTillWave = waveTimer + 2f;
+        ClearWave();
+        distanceStage++;
+        ShowBigMessage("Stage "+distanceStage+" Cleared!", 3.0f);
+        Debug.Log("Next stage.. big message should be showing??");
+        // TODO:: intermission? bonus stages?
+        wellerManCountdown = wellerManLength;
+        Wellerman.GetComponent<AudioSource>().Play();
+        _playerScript.minSpeed = distanceStage * speedBasePerStage - 1f;
+        _playerScript.minSpeed = distanceStage * speedBasePerStage + 1f;
+        ChangeSpeed(distanceStage * speedBasePerStage);
+        LifeUp();
+        _playerScript.PlayVictory();
+    }
+
+    //remove all current wave obstacles
+    public void ClearWave(){
+
+        foreach( GameObject waveObj in waveObjects) {
+            Destroy(waveObj);
+        }
+        waveObjects.Clear();
+    }
+
+    public void PlayerRepaired(){
+        Wellerman.GetComponent<AudioSource>().pitch = 1.0f;
+        ChangeSpeed(currentBaseSpeed);
+        playerObject.GetComponent<PlayerMoveScript>().Repaired();
+    }
     void Update()
     {
 
@@ -353,23 +469,39 @@ public class GameStartScript : MonoBehaviour
 
         if( currentState == "playing" && isPaused < 1) {
             
-            SpawnHorde();
+            distanceCounter += Time.deltaTime;
+            float prevWellerManCount = wellerManCountdown;
+            wellerManCountdown -= Time.deltaTime;
+            // TODO:: support intermission between stages?
+            //if song is finished - next stage, go faster
+            if(wellerManCountdown < 0.02f){
+                NextStage();
+            } else {
+                // check if we should do partial speedups
+                float wQuarter = wellerManLength / stageSpeedBoostNum;
+                if( (int) (prevWellerManCount / wQuarter) != (int) (wellerManCountdown / wQuarter ) ){
+                    int miniStage = (int) stageSpeedBoostNum - (int) (wellerManCountdown / wQuarter );
+                    currentBaseSpeed += miniStage * stageSpeedBoostSpeed;
+                    Debug.Log("Speed going to "+currentBaseSpeed);
+                    if(shipSpeed != _repairShipSpeed){
+                        ChangeSpeed(currentBaseSpeed);
+                    }
+                }
+            }
 
+            // TODO:: better UI ..
             if( playerObject) {
-                pirateCountdown -= Time.deltaTime;
-                distanceCountdown -= Time.deltaTime * shipSpeed ;
                 GameObject.Find("Distance").GetComponent<UnityEngine.UI.Text>().text = 
-                    "Distance Left: "+(int)distanceCountdown+"km @ "+shipSpeed+" knots";
+                    "Distance: "+(int)distanceCounter+"km @ "+shipSpeed+" knots";
                 GameObject.Find("BadTimer").GetComponent<UnityEngine.UI.Text>().text = 
-                    "Pirates in "+(int)pirateCountdown+"s";
+                    "Pirates in "+(int)lifesUntilPirates+"";
             }
 
             if(shipSpeed == _repairShipSpeed) {
                 _repairTimer -= Time.deltaTime;
                 if(_repairTimer <= 0.0f) {
-                    Wellerman.GetComponent<AudioSource>().pitch = 1.0f;
-                    ChangeSpeed(2.0f);
-                    playerObject.GetComponent<PlayerMoveScript>().Repaired();
+                    PlayerRepaired();
+                    
                 }
             }
 
@@ -381,13 +513,10 @@ public class GameStartScript : MonoBehaviour
                 GameObject.Find("BigMessage").GetComponent<UnityEngine.UI.Text>().text = "";
             }
 
-            if(pirateCountdown < 1) {
-                // game over
+            if(lifesUntilPirates < 1){
                 GameOver();
-            } else if( distanceCountdown < 1) {
-                // winner!
-                GameWon();
             }
+
 
             // speed controls
             if(shipSpeed != _repairShipSpeed) {
@@ -415,7 +544,7 @@ public class GameStartScript : MonoBehaviour
             List<GameObject> destroyThese = new List<GameObject>{};
             foreach( GameObject waveObj in waveObjects) {
                 waveObj.transform.position = new Vector3(waveObj.transform.position.x - (shipSpeed * Time.deltaTime), waveObj.transform.position.y, waveObj.transform.position.z);
-                if(waveObj.transform.position.x < -4f){
+                if(waveObj.transform.position.x < -2f){
                     destroyThese.Add(waveObj);
                 } else if(waveObj.transform.position.x > -0.2f && waveObj.transform.position.x < 1.1f
                     && waveObj.GetComponent<MoveObstacleScript>().currentLane == _playerScript._currentWave) {
