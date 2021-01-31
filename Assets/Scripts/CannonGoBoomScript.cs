@@ -7,7 +7,7 @@ public class CannonGoBoomScript : MonoBehaviour
     public float speedX = 3f;
     public float endDuration = 3f;
     public float duration = 0f;
-    public float heightY = 3f;
+    public float heightY = 1.2f;
     public float startY;
     public Vector3[] points = {
         Vector3.one,
@@ -33,13 +33,13 @@ public class CannonGoBoomScript : MonoBehaviour
                 duration += Time.deltaTime;
 
                 Vector3 lerpedX = Vector3.Lerp( points[0], points[2], (duration/endDuration) );
-                lerpedX.y = lerpedX.y + ((float)Mathf.Sin(duration*1f) * heightY);
+                lerpedX.y = lerpedX.y + ((float)Mathf.Sin((duration*2)/endDuration) * heightY);
                 transform.position = lerpedX;
                 //Vector3 m1 = Vector3.Lerp( points[0], points[1], duration );
                 //Vector3 m2 = Vector3.Lerp( points[1], points[2], duration );
                 //transform.position = Vector3.Lerp(m1, m2, (duration/endDuration));
             } else {
-                Destroy(this);
+                Destroy(this.gameObject);
             }
         }
     }
