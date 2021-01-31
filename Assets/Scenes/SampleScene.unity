@@ -245,7 +245,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4, type: 3}
+  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4,
+    type: 3}
   m_Color: {r: 0.6994037, g: 0.7990584, b: 0.8773585, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1916,10 +1917,10 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 64
+    m_FontSize: 55
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 6
+    m_MinSize: 5
     m_MaxSize: 64
     m_Alignment: 3
     m_AlignByGeometry: 0
@@ -3074,9 +3075,12 @@ MonoBehaviour:
   - -2
   health: 100
   gold: 0
-  sfxGold: {fileID: 8300000, guid: 9e0e697d2953d4a24b5cf3ba55f90ad3, type: 3}
+  obstaclesSunk: 0
+  sfxGold: {fileID: 8300000, guid: f837ad39f1e8b4ac587f644b16139f32, type: 3}
   sfxDamage: {fileID: 8300000, guid: dd20d0f332ecb4bcf8bdf822ebf157e8, type: 3}
   sfxVictory: {fileID: 8300000, guid: 48fc9f06c23194e9186c323ce8b0bebb, type: 3}
+  sfxCannon: {fileID: 8300000, guid: 630da8c30b500436491355f0d9065f55, type: 3}
+  sfxSink: {fileID: 8300000, guid: fc7459a3955134e0a98f6a35157d10e7, type: 3}
   speed: 2
   acceleration: 0.2
   minSpeed: 1
@@ -3947,7 +3951,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4, type: 3}
+  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4,
+    type: 3}
   m_Color: {r: 0.45882356, g: 0.627451, b: 0.85098046, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -4721,7 +4726,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -90}
+  m_AnchoredPosition: {x: 457, y: -90}
   m_SizeDelta: {x: 500, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1454041184
@@ -4746,7 +4751,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 64
+    m_FontSize: 60
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 6
@@ -4889,7 +4894,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 434716dd316a64e52b715d8fc9c715ff, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 26c4c7d8dd0664b36bdcfcd768abe431, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -5214,7 +5219,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4, type: 3}
+  m_Sprite: {fileID: 7482667652216324306, guid: db750325989564987a34393247d883b4,
+    type: 3}
   m_Color: {r: 0.46057317, g: 0.62685186, b: 0.8490566, a: 1}
   m_FlipX: 0
   m_FlipY: 0
