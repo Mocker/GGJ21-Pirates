@@ -502,7 +502,7 @@ public class GameStartScript : MonoBehaviour
 
             // TODO:: better UI ..
             if( playerObject) {
-                GameObject.Find("Distance").GetComponent<UnityEngine.UI.Text>().text = 
+                GameObject.Find("Distance Text").GetComponent<UnityEngine.UI.Text>().text = 
                     "Distance: "+(int)distanceCounter+"km @ "+shipSpeed+" knots";
                 GameObject.Find("BadTimer").GetComponent<UnityEngine.UI.Text>().text = 
                     "Pirates in "+(int)lifesUntilPirates+"";

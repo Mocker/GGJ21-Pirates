@@ -11,6 +11,7 @@ TagManager:
   - Wave
   - Pickup
   - bullet
+  - Bar
   layers:
   - Default
   - TransparentFX
