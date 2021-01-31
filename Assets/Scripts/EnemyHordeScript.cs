@@ -10,9 +10,11 @@ public class EnemyHordeScript : MonoBehaviour
     //public float endX = 7f;
     public Vector3 startScale, startX;
     public float elapsedTime, destTime;
+
+    private Animator _anim;
     void Start()
     {
-
+        _anim = GetComponent<Animator>();
     }
 
     public void StartMovingIt( Vector3 dest, Vector3 destScale, float duration) {
@@ -21,6 +23,7 @@ public class EnemyHordeScript : MonoBehaviour
         endX = dest;
         startX = transform.position;
         startScale = transform.localScale;
+        moveIt = true;
     }
 
     // Update is called once per frame
@@ -30,6 +33,15 @@ public class EnemyHordeScript : MonoBehaviour
             elapsedTime += Time.deltaTime;
             transform.position = Vector3.Lerp(startX, endX, (elapsedTime / destTime));
             transform.localScale = Vector3.Lerp(startScale, endScale, (elapsedTime / destTime));
+            float fireTheCannons = Random.Range(0.0f, 1.0f);
+            if(fireTheCannons < 0.02f && _anim.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.EnemyShipIdle")){
+                _anim.Play("Base Layer.EnemyShipFiring");
+                GameObject ball = Instantiate(GameObject.Find("Cannonball"), transform.position, Quaternion.identity);
+                ball.SetActive(true);
+                ball.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
+                ball.GetComponent<Renderer>().sortingOrder = 5;
+                ball.GetComponent<CannonGoBoomScript>().isActive = true;
+            }
         }   
     }
 }

@@ -18,7 +18,7 @@ public class GameStartScript : MonoBehaviour
     private List<GameObject> cloudObjects = new List<GameObject>{};
     private float _cloudSpawnCounter = 0.1f;
 
-    public GameObject gameUI, menuUI, pauseUI, winUI, loseUI;
+    public GameObject Wellerman, gameUI, menuUI, pauseUI, winUI, loseUI, playButton;
 
     public string currentState = "menu";
 
@@ -61,13 +61,15 @@ public class GameStartScript : MonoBehaviour
     public void StartPlaying()
     {
         pirateStartTime = pirateCountdown; distanceStart = distanceCountdown;
+        playerObject.transform.position = new Vector3(-7f, _playerStartPos.y, _playerStartPos.z);
         Debug.Log("Start play transition");
         currentState = "menuToPlayTransition";
-        GameObject.Find("PlayButton").SetActive(false);
+        playButton.SetActive(false);
         //overlayRightCo = MoveOverSeconds( overlayRight, overlayRightEnd, 10f, "menuToPlay");
         _playerMoveCo = MoveOverSeconds( playerObject, _playerStartPos, 4f, "actuallyPlay");
 
         StartCoroutine(_playerMoveCo);
+        Wellerman.GetComponent<AudioSource>().Play();
         
     }
     public void ActuallyStartPlaying()
@@ -87,15 +89,18 @@ public class GameStartScript : MonoBehaviour
         currentState = "menu";
         //GameObject.Find("overlay-color-left").SetActive(true);
         //GameObject.Find("overlay-color-right").SetActive(true);
-        GameObject.Find("PlayButton").SetActive(true);
+        playButton.SetActive(true);
         menuUI.SetActive(true);
         pauseUI.SetActive(false);
         gameUI.SetActive(false);
+        winUI.SetActive(false);
+        loseUI.SetActive(false);
         isPaused = 1;
     }
 
     public void GameOver()
-    {
+    {   Debug.Log("You Lose");
+        ChangeSpeed(1.0f);
         isPaused = 1;
         currentState = "GameOver";
         menuUI.SetActive(false);
@@ -106,6 +111,8 @@ public class GameStartScript : MonoBehaviour
     }
     public void GameWon()
     {
+        Debug.Log("You Won!");
+        ChangeSpeed(1.0f);
         isPaused = 1;
         currentState = "GameWon";
         menuUI.SetActive(false);
@@ -120,7 +127,7 @@ public class GameStartScript : MonoBehaviour
     public void SpawnHorde()
     {
         float progress = 100 -(int)((pirateCountdown*100) / pirateStartTime); //scale 1-100 of how close pirates are
-        int totalPirates = (int)(progress / 10) + (progress < 10f ? 1 : 2);
+        int totalPirates = (int)(progress / 8) + (progress < 10f ? 1 : 2);
         //Debug.Log("horde progress "+progress+" - total pirates: "+totalPirates);
         //add any pirates that need to be created
         int currentPirates = enemyHorde.Count;
@@ -132,6 +139,7 @@ public class GameStartScript : MonoBehaviour
             enemyTemplate.transform.position.x + Random.Range(-1f,1f), 
             (whichWave==1 ? spawnTop.transform.position.y : (whichWave==2? spawnMid.transform.position.y : spawnBottom.transform.position.y)), 
             enemyTemplate.transform.position.z);
+            ePos.y += 0.2f;
             GameObject pirate = (GameObject) Instantiate(enemyTemplate, ePos, Quaternion.identity);
                 pirate.transform.SetParent(EnemyParent.transform);
                 pirate.transform.localScale = new Vector3( 1.0f, 1.0f, 1.0f);
@@ -140,8 +148,8 @@ public class GameStartScript : MonoBehaviour
                 pirate.GetComponent<Renderer>().sortingOrder = (whichWave==1 ? 1 : (whichWave==2? 3: 4));
                 pirate.tag = "EnemyHorde";
                 pirate.GetComponent<EnemyHordeScript>().StartMovingIt(
-                    new Vector3( playerObject.transform.position.x, ePos.y, ePos.z),
-                    new Vector3( 3.0f, 3.0f, 1f), 
+                    new Vector3( playerObject.transform.position.x, ePos.y-0.2f, ePos.z),
+                    new Vector3( 4f, 4f, 4f), 
                     pirateCountdown
                 );
                 enemyHorde.Add(pirate);
@@ -241,6 +249,7 @@ public class GameStartScript : MonoBehaviour
     public void PlayerCollided(GameObject whammo) {
         ChangeSpeed(_repairShipSpeed);
         _repairTimer = _repairWait;
+        Wellerman.GetComponent<AudioSource>().pitch = 0.92f;
     }
     
     //CoRoutine to move an object from start to dest over time
@@ -297,17 +306,25 @@ public class GameStartScript : MonoBehaviour
 
     // Update is called once per frame
 
+    public void ResetGame() {
+        pirateCountdown = pirateStartTime;
+        isPaused = 1;
+        distanceCountdown = distanceStart;
+        foreach(GameObject obj in waveObjects){
+            Destroy(obj);
+        }
+        waveObjects = new List<GameObject>{};
+        foreach(GameObject obj in enemyHorde){
+            Destroy(obj);
+        }
+        enemyHorde = new List<GameObject>{};
+        _playerScript.health = 100;
+        DisplayMenu();
+    }
+
     void Update()
     {
 
-        // menu transition
-        /*if(currentState == "menuToPlayTransition") {
-            GameObject.Find("overlay-color-left").transform.position = Vector3.Lerp(overlayLeftStart, overlayLeftEnd, 0.1f*Time.deltaTime);
-            GameObject.Find("overlay-color-right").transform.position = Vector3.Lerp(overlayRightStart, overlayRightEnd, 0.1f*Time.deltaTime);
-            if( GameObject.Find("overlay-color-right").transform.position.x > 1.5f ) {
-                ActuallyStartPlaying();
-            }
-        }*/
 
         // Pause
         // TODO:: use input mapping
@@ -327,6 +344,12 @@ public class GameStartScript : MonoBehaviour
             || (currentState == "playing" && isPaused < 1) ) {
                 MoveClouds();
             }
+        if( currentState == "GameWon" || currentState == "GameOver")
+        {
+            if( Input.GetKeyDown(KeyCode.Space) ) {
+                ResetGame();
+            }
+        }
 
         if( currentState == "playing" && isPaused < 1) {
             
@@ -344,6 +367,7 @@ public class GameStartScript : MonoBehaviour
             if(shipSpeed == _repairShipSpeed) {
                 _repairTimer -= Time.deltaTime;
                 if(_repairTimer <= 0.0f) {
+                    Wellerman.GetComponent<AudioSource>().pitch = 1.0f;
                     ChangeSpeed(2.0f);
                     playerObject.GetComponent<PlayerMoveScript>().Repaired();
                 }
@@ -391,7 +415,7 @@ public class GameStartScript : MonoBehaviour
             List<GameObject> destroyThese = new List<GameObject>{};
             foreach( GameObject waveObj in waveObjects) {
                 waveObj.transform.position = new Vector3(waveObj.transform.position.x - (shipSpeed * Time.deltaTime), waveObj.transform.position.y, waveObj.transform.position.z);
-                if(waveObj.transform.position.x < -10f){
+                if(waveObj.transform.position.x < -4f){
                     destroyThese.Add(waveObj);
                 } else if(waveObj.transform.position.x > -0.2f && waveObj.transform.position.x < 1.1f
                     && waveObj.GetComponent<MoveObstacleScript>().currentLane == _playerScript._currentWave) {
