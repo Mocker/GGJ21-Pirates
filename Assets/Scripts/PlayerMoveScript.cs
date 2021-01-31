@@ -14,10 +14,14 @@ public class PlayerMoveScript : MonoBehaviour
     };
 
     public int health = 100; //would like to just flag as damaged or not but can use an internal int for now
-    public int gold = 0; // can have random spawned gold pickups as score multipliers
+    public int gold = 0, obstaclesSunk = 0; // can have random spawned gold pickups as score multipliers
     public AudioClip sfxGold;
     public AudioClip sfxDamage;
     public AudioClip sfxVictory;
+
+    public AudioClip sfxCannon;
+
+    public AudioClip sfxSink;
 
     internal Transform thisTransform;
     public float speed = 2.0f;
@@ -54,6 +58,10 @@ public class PlayerMoveScript : MonoBehaviour
         } else {
             _animator.Play("Base Layer.PlayerDamagedFiring");
         }
+        if(sfxCannon) {
+            _audioSource.clip = sfxCannon;
+            _audioSource.Play();
+        }
         GameObject ball = Instantiate(GameObject.Find("Cannonball"), transform.position, Quaternion.identity);
         ball.SetActive(true);
         ball.GetComponent<Renderer>().sortingLayerID = SortingLayer.NameToID("Player");
@@ -65,6 +73,7 @@ public class PlayerMoveScript : MonoBehaviour
         );
         ball.GetComponent<CannonGoBoomScript>().CurrentLane = _currentWave;
     }
+
 
     public void IncrementSpeed( float inc) 
     {
@@ -92,6 +101,11 @@ public class PlayerMoveScript : MonoBehaviour
 
     public void DestroyedEnemy( GameObject enemy) {
         Debug.Log("Destroyed enemy ship!");
+        obstaclesSunk += 1;
+        if(sfxSink) {
+            _audioSource.clip = sfxSink;
+            _audioSource.Play();
+        }
         _gameController.waveObjects.Remove(enemy);
         Destroy(enemy);
     }

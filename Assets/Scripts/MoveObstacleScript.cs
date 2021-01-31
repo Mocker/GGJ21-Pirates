@@ -5,6 +5,7 @@ using UnityEngine;
 public class MoveObstacleScript : MonoBehaviour
 {
     public int currentLane = 1;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -16,6 +17,7 @@ public class MoveObstacleScript : MonoBehaviour
     {
        
     }
+
 
     private void OnTriggerEnter(Collider other)
     {

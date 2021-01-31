@@ -3074,9 +3074,12 @@ MonoBehaviour:
   - -2
   health: 100
   gold: 0
-  sfxGold: {fileID: 8300000, guid: 9e0e697d2953d4a24b5cf3ba55f90ad3, type: 3}
+  obstaclesSunk: 0
+  sfxGold: {fileID: 8300000, guid: f837ad39f1e8b4ac587f644b16139f32, type: 3}
   sfxDamage: {fileID: 8300000, guid: dd20d0f332ecb4bcf8bdf822ebf157e8, type: 3}
   sfxVictory: {fileID: 8300000, guid: 48fc9f06c23194e9186c323ce8b0bebb, type: 3}
+  sfxCannon: {fileID: 8300000, guid: 630da8c30b500436491355f0d9065f55, type: 3}
+  sfxSink: {fileID: 8300000, guid: fc7459a3955134e0a98f6a35157d10e7, type: 3}
   speed: 2
   acceleration: 0.2
   minSpeed: 1
@@ -4889,7 +4892,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 434716dd316a64e52b715d8fc9c715ff, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 26c4c7d8dd0664b36bdcfcd768abe431, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
