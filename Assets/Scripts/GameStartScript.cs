@@ -24,6 +24,7 @@ public class GameStartScript : MonoBehaviour
     public AudioClip[] themeSongs;
     public AudioClip titleSong;
     private int _currentThemeIndex;
+    public AudioClip loseSong; //                                                             #####            MAX ADDED THIS
 
     public string currentState = "menu";
 
@@ -149,8 +150,19 @@ public class GameStartScript : MonoBehaviour
     public void GameOver()
     {   
         Debug.Log("Game Over");
+        // ############################################### Game over song
+        Wellerman.GetComponent<AudioSource>().Stop();
+        if (loseSong)
+        {
+            Wellerman.GetComponent<AudioSource>().clip = loseSong;
+            Wellerman.GetComponent<AudioSource>().Play();
+        }
+        else { Debug.Log("Missing lose song"); }
+
         // TODO:: figure better calculation for score, like pirates sunk, weight of the gold etc
         int totalScore = (int)distanceCounter + (_playerScript.gold*50) + (_playerScript.obstaclesSunk*25);
+        Debug.Log("Score: " + totalScore);
+        Debug.Log("Player Stats:  distance: " + distanceCounter + " gold: " + (_playerScript.gold * 50) + "Pirates Sunk: " + _playerScript.obstaclesSunk); // ####### MAX DID THIS
         
         if( PlayerPrefs.HasKey("TopScore") ){
             int topScore = PlayerPrefs.GetInt("TopScore");
