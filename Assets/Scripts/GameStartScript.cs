@@ -493,13 +493,9 @@ public class GameStartScript : MonoBehaviour
         ChangeSpeed(currentBaseSpeed);
         playerObject.GetComponent<PlayerMoveScript>().Repaired();
     }
-    void Update()
-    {
 
-
-        // Pause
-        // TODO:: use input mapping
-        if(currentState == "playing" &&Input.GetKeyDown(KeyCode.LeftShift)){
+    public void Pause(){
+        if(currentState == "playing"){
             isPaused = isPaused < 1 ? 1 : 0;
             if(isPaused < 1){
                 pauseUI.SetActive(false);
@@ -509,6 +505,16 @@ public class GameStartScript : MonoBehaviour
             for(int i = 0; i<waves.Length; i++){
                 waves[i].GetComponent<AnimateTextureScript>().isPaused = isPaused;
             }
+        }
+    }
+    void Update()
+    {
+
+
+        // Pause
+        // TODO:: use input mapping
+        if(currentState == "playing" &&Input.GetKeyDown(KeyCode.LeftShift)){
+            Pause();
         }
 
         if( currentState == "menu" || currentState == "menuToPlayTransition" 

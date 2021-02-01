@@ -23,6 +23,8 @@ public class PlayerMoveScript : MonoBehaviour
 
     public AudioClip sfxSink;
 
+    public AudioClip sfxSwitchLanes;
+
     internal Transform thisTransform;
     public float speed = 2.0f;
     public float acceleration = 0.5f;
@@ -136,27 +138,42 @@ public class PlayerMoveScript : MonoBehaviour
         _animator.Play("Base Layer.PlayerShipIdle");
     }
 
+    public void MoveUp(){
+        if(_currentWave > 1) {
+                if(sfxSwitchLanes) {
+                    _audioSource.clip = sfxSwitchLanes;
+                    _audioSource.Play();
+                }
+                _currentWave--;
+                transform.position =  new Vector3(transform.position.x,  _wavePositions[ _currentWave-1], transform.position.z);
+                _myRenderer.sortingOrder = 1 + _currentWave;
+                _bobbingScript.originalY = transform.position.y;
+            }
+    }
+
+    public void MoveDown(){
+        if(_currentWave < 3) {
+                if(sfxSwitchLanes) {
+                    _audioSource.clip = sfxSwitchLanes;
+                    _audioSource.Play();
+                }
+                _currentWave++;
+                transform.position = new Vector3(transform.position.x,  _wavePositions[ _currentWave-1], transform.position.z);
+                 _myRenderer.sortingOrder = 1 + _currentWave;
+                 _bobbingScript.originalY = transform.position.y;
+            }
+    }
+
     // Update is called once per frame
     void Update()
     {
         if(cannonTimer > 0.0f) cannonTimer -= Time.deltaTime;
 
 		if (Input.GetKeyDown(KeyCode.UpArrow)){
-            if(_currentWave > 1) {
-                _currentWave--;
-                transform.position =  new Vector3(transform.position.x,  _wavePositions[ _currentWave-1], transform.position.z);
-                _myRenderer.sortingOrder = 1 + _currentWave;
-                _bobbingScript.originalY = transform.position.y;
-            }
-			
+            MoveUp();			
 		}
 		if (Input.GetKeyDown(KeyCode.DownArrow)){
-			if(_currentWave < 3) {
-                _currentWave++;
-                transform.position = new Vector3(transform.position.x,  _wavePositions[ _currentWave-1], transform.position.z);
-                 _myRenderer.sortingOrder = 1 + _currentWave;
-                 _bobbingScript.originalY = transform.position.y;
-            }
+			MoveDown();
 		}
 
         if (Input.GetKeyDown(KeyCode.Space)){
